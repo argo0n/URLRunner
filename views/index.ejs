@@ -37,7 +37,7 @@
   <div class="container mt-5 position-relative">
 
     <div class="row justify-content-center">
-      <div class="col-8">
+      <div class="col-11 col-xl-8 col-xxl-8 col-lg-11 col-md-11 col-sm-11 col-xs-11">
         <div class="card">
           <div class="overlay d-none justify-content-center align-items-center">
             <div class="spinner-border text-light" role="status">
@@ -66,7 +66,7 @@
     function createAccordion(accordionData) {
       // Create the main accordion div
       const accordionDiv = document.createElement('div');
-      accordionDiv.className = 'accordion';
+      accordionDiv.className = 'accordion mt-2';
 
       accordionData.forEach((data, index) => {
         // Create the accordion item div
@@ -128,7 +128,7 @@
 
       const provided_url = document.getElementById("website").value;
       showLoading(true);
-      document.getElementById("accordion-container").innerHTMl = "";
+      document.getElementById("accordion-container").innerHTML = "";
       fetch("/push", {
         method: 'POST',
         headers: {
@@ -142,7 +142,7 @@
               r.forEach((data, index) => {
                 const header = `${data.ip} (Device ${index+1})`;
                 let body = ``
-                if (data.success === data.total) {
+                if (data.success === data.total && data.total > 0) {
                   body += `<p class="text-success">${data.success}/${data.total} Successful</p>`
                 } else {
                   body += `<p class="text-warning">${data.success}/${data.total} Successful</p>`
@@ -153,10 +153,9 @@
                 console.log(r);
                 data.requests.forEach((cmd_data, cmd_index) => {
                   console.log(cmd_data);
-                  const cmd_header = `<code>${encodeHTML(cmd_data.cmd)}</code>`;
-                  let cmd_body = "<p>Executed correctly: <span class="
-                  cmd_body += cmd_data.success === true ? `"text-success"><i class="bi bi-check-lg"></i></span>` : `"text-warning"><i class="bi bi-x-lg"></i></span>` + "</p>";
-                  cmd_body += `<h5>Output</h5><pre><code>${cmd_data.stdout > 0 ? encodeHTML(cmd_data.stdout): "No output"}</code></pre>`
+                  let cmd_header = `<code style="word-wrap: break-word;">${encodeHTML(cmd_data.cmd)}</code>`;
+                  cmd_header += cmd_data.success === true ? `<p class="text-success mb-0"> <i class="bi bi-check-lg"></i></p>` : `<p class="text-warning"> <i class="bi bi-x-lg"></i></p>`
+                  let cmd_body = `<h5>Output</h5><pre><code>${cmd_data.stdout > 0 ? encodeHTML(cmd_data.stdout): "No output"}</code></pre>`
                   cmd_accordion_data.push({header: cmd_header, body: cmd_body});
                 })
                 const cmd_accordion = createAccordion(cmd_accordion_data);

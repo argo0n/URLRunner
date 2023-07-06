@@ -7,21 +7,27 @@ const { getIPAddress } = require("../service/networkService");
 router.post('/', function(req, res, next) {
     const requested_url = req.body.url;
     const ips_to_push = config.ips_to_push;
-    for (let i = 0; i < ips_to_push.length; i++) {
-        const ip = ips_to_push[i]
-        fetch(`http://${ip}:12629/push/receivePush`, {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({url: requested_url})
-        })
-            .then(response => {
-                response.json()
-                    .then(r => {
-                        res.json([r]).send();
-                    })
-            })
 
-    }
+    const fetchPromises = ips_to_push.map(ip => {
+        return Promise.race([
+            fetch(`http://${ip}:12629/push/receivePush`, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({url: requested_url})
+            }),
+            new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('timeout')), 5000)
+            )
+        ])
+            .then(response => response.json())
+            .then(r => ({ip, success: r.success, fail: r.fail, total: r.total, requests: r.requests}))
+            .catch(error => ({ip, success: 0, fail: 1, total: 0, requests: [{cmd: `http://${ip}:12629/push/receivePush`, success: false, error: error.toString()}]}));
+    });
+
+    Promise.allSettled(fetchPromises)
+        .then(results => {
+            res.json(results.map(result => result.value)).send();
+        });
 });
 
 router.post('/receivePush', function(req, res, next) {
